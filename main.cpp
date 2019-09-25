@@ -6,10 +6,25 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////
 // sample events
-#define EVENT1 1
-#define EVENT2 2
+#define EVENT1 1 // First come first serve
+/*
+//for event 1
+int processCompleted  = 0;
+while(processCompleted < 10000){
+
+
+}
+*/
+#define EVENT2 2 // least burst time first.
+//for event 1
+/*int processCompleted = 0;
+while (processCompleted < 10000) {
+
+
+}
+*/
 // .. add more events
-#define EVENT3 3
+#define EVENT3 3 // Round robin
 
 ////////////////////////////////////////////////////////////////     //event structure
 struct event{
