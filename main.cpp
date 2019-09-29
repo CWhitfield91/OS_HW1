@@ -1,30 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <list>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
+struct process {
+	float burst;
+	int state;
+	int arivalTime;
+	int ID;
+};
+
 ////////////////////////////////////////////////////////////////
 // sample events
-#define EVENT1 1 // First come first serve
-/*
-//for event 1
-int processCompleted  = 0;
-while(processCompleted < 10000){
+#define EVENT1 1 //Schedule new arrivals, put processes in PCB
+#define EVENT2 2 //Change process state, send to 
+#define EVENT3 3 //kick into ready if x condition is meet
+#define EVENT4 4 //exit and terminate process 
 
-
-}
-*/
-#define EVENT2 2 // least burst time first.
-//for event 1
-/*int processCompleted = 0;
-while (processCompleted < 10000) {
-
-
-}
-*/
-// .. add more events
-#define EVENT3 3 // Round robin
+// state of processes
+#define STATE1 1 //new
+#define STATE2 2 //ready
+#define STATE3 3//executing
+#define STATE4 4//tereminate
 
 ////////////////////////////////////////////////////////////////     //event structure
 struct event{
@@ -52,6 +53,11 @@ bool end_condition;
 int PID;
 int algorithm;
 float lambda;
+int terminatedProcess = 0;
+
+list<event>EventQueue;
+vector<process>ProcessList;
+
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -100,10 +106,11 @@ int run_sim()
                 process_event2(eve);
                 break;
             case EVENT3:
-                //do something
+				process_event3(eve);
                 break;
-
-                // add more events
+			case EVENT4:
+				process_event4(eve);
+				break;
 
             default:
                 // error
@@ -133,13 +140,61 @@ void init()
     // schedule first events
     end_condition = true;
     clock = 0;
+	PID = 0;
     //create first node
-    event *new_eve = new event(); //create first node
-    new_eve->event_PID = PID;     //set node variables
-    new_eve->time = genexp(lambda);
-    new_eve->type = EVENT1;
-    new_eve->next = head;
+	event eve;
+	eve.event_PID = PID;
+	eve.time = genexp(lambda);
+	//set all event variables
+	eve.type = EVENT1;
+	EventQueue.push_front(eve);
+	head = EventQueue.begin();
+}
 
-    head = new_eve; //make head point to new node
+void process_event1(event One){
+	//add schedule and move to 
+	// need to add a scheduling alg for others
 
+	new process tempProcess;
+	tempProcess.ID = One.event_PID;
+	tempProcess.state = STATE2;
+	tempProcess.burst = One.time;
+	ProcessList.back(tempProcess);
+	delete tempProcess;
+	One.type = EVENT2;
+	return;
+}
+
+void process_event2(event Two) {
+	// move a process to ready 
+	// Update/edit the event queue
+	new process tempProcess;
+	tempProcess = ProcessList.begin();
+	tempProcess.state = STATE4;
+	ProcessLsit[0].replace(ProcessList[0], tempProcess);//IDK if this is how to replace the current process we are working on.
+	Two.type = EVENT4;
+	delete tempProcess;
+
+	new event;//this event will be added to queue for report.
+	//??how to do this with update to time.
+
+	return;
+}
+void process_event3(event Three){
+	new event;//this event will be added to queue for report.
+	//??how to do this with update to time.
+	return;
+}
+void process_event4(event Four) {
+	//Update the event list
+	ProcessList.pop_front();//removes the first element 
+
+	terminatedProcess++;
+	//check if to terminate
+	if (terminatedProcess == 10000) {
+		end_condition = true;
+	}
+	new event;//this event will be added to queue for report.
+	//??how to do this with update to time.
+	return;
 }
