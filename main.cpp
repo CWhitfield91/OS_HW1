@@ -152,15 +152,9 @@ int main(int argc, char* argv[])
 {
 	float temp = .06;
 	// parse arguments
-<<<<<<< HEAD
 	algorithm = atoi(argv[1]);
 	lambda = atof(argv[2]);
 	serviceAvg = atof(argv[3]);
-=======
-	algorithm = 3;// atoi(argv[1]);
-	lambda = 1;// atof(argv[2]);
-	serviceAvg = temp;// atof(argv[3]);
->>>>>>> a0471783fd6e317a42f435914c7466f2334207d1
 	quantum = 0.1;
 	init();
 	//cout << algorithm << " " << lambda << endl;
@@ -327,17 +321,12 @@ void process_event2(event* two) {
 			cout << "event rescheduled" << endl;
 			/*event* tempHead = two;
 			if (tempHead->next != NULL) {
-<<<<<<< HEAD
-=======
-
->>>>>>> a0471783fd6e317a42f435914c7466f2334207d1
 				while ((tempHead->next != NULL)) {
 					tempHead = tempHead->next;
 					//cout <<"list check"<< tempHead->burstTime<<endl;
 				}
 				tempHead->next = two;
 			}*/
-<<<<<<< HEAD
 
 		}
 		else {
@@ -377,46 +366,6 @@ void process_event3(event* three) {
 
 }
 
-=======
-
-		}
-		else {
-			two->type = EVENT4;
-		}
-	}
-		  break;
-	}
-}
-
-
-void process_event3(event* three) {
-	cout << "in event 3" << endl;
-	
-	if (algorithm == 3) {
-		head = three->next;
-		/*while ((tempHead->next != NULL)) {
-			tempHead = tempHead->next;
-			cout << "loop test";
-		}*/
-		tail->next = three;
-		tail = three;
-		three->next = NULL;
-		three->type = EVENT1;
-		cpuClock += quantum;
-		cout << "testing: " << endl;
-	}
-	else{
-
-		event* cursor = three->next;
-		event* temp = three;
-		three->next = cursor->next;
-		cursor->next = three;
-		three = cursor;
-	}
-
-}
-
->>>>>>> a0471783fd6e317a42f435914c7466f2334207d1
 void process_event4(event* four) {
 	//change process state (not necessary for FCFS)
 	cout << "in event 4" << endl;
