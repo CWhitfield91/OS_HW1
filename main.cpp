@@ -4,6 +4,8 @@
 #include <list>
 #include <iostream>
 #include <vector>
+#include <iomanip>
+#include <random>
 
 using namespace std;
 
@@ -35,7 +37,10 @@ event *tail = NULL;
 struct process {
 	float burst;
 	int state;
-	int arrivalTime;
+	float arrivalTime;
+    float waitTime;
+    float serviceTime;
+    float turnAroundTime;
 	int ID;
 };
 
@@ -61,8 +66,6 @@ float serviceAvg;
 int terminatedProcess;
 
 vector<process>ProcessList;  //vector for proccesses
-vector<int>waitTimes;
-vector<int>turnAroundTimes;
 
 // //////////////////////////////////////////////////////////////// //schedules an event in the future
 // int schedule_event(struct event* new)
@@ -73,7 +76,7 @@ vector<int>turnAroundTimes;
 // returns a random number between 0 and 1
 float urand()
 {
-    return( (float) rand()/RAND_MAX );
+    return( (float)rand()/RAND_MAX );
 }
 /////////////////////////////////////////////////////////////
 // returns a random number that follows an exp distribution
@@ -84,37 +87,46 @@ float genexp(float lambda)
     while (x == 0)
     {
         u = urand();
-        x = (-1/lambda)*log(u);
+        x = (1-log(u))/lambda;
     }
     return(x);
 }
 ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+int main(int argc, char *argv[] )
+{
+    // parse arguments
+    algorithm = atoi(argv[1]);
+    lambda = atof(argv[2]);
+    serviceAvg = atof(argv[3]);
+    init();
+    run_sim();
+    generate_report();
+    cout << "Algorithm: " << algorithm << " " << "Lambda: " << lambda << " " << "Service Avg: " << serviceAvg << endl;
+    return 0;
+}
+
 int run_sim()
 {
     struct event* eve;
     while (!end_condition)
     {
         eve = head;
-        cpuClock += eve->arrivalTime;
+        //cpuClock += eve->arrivalTime;
         switch (eve->type)
         {
             case EVENT1:
-                //cout << "event 1: " << eve->arrivalTime << "  PID: " << eve->PID << "  status: " << ProcessList[].ID << endl;
                 process_event1(eve);
-                cout << "event 1 burst: " << eve->burstTime << endl;
                 break;
             case EVENT2:
-                cout << "event 2 burst: " << eve->burstTime << endl;
-                cout << "next event burst: " << eve->next->burstTime << endl;
                 process_event2(eve);
+                //cout << "Proc arrival time: " << ProcessList[eve->PID].arrivalTime << endl;
                 break;
             case EVENT3:
 				process_event3(eve);
-                cout << "event 3 burst: " << eve->burstTime << endl;
-                cout << "next event burst: " << eve->next->burstTime << endl;
+                //cout << "event 3 arrival: " << eve->arrivalTime << endl;
                 break;
 			case EVENT4:
-                //cout << "event 4: " << eve->arrivalTime << "  PID: " << eve->PID << "  state: " << ProcessList[eve->PID].state << endl;               
 				process_event4(eve);
 				break;
 
@@ -132,22 +144,6 @@ int run_sim()
             eve = NULL;
         }
     }
-    cout << "FINISHED" << endl;
-    return 0;
-}
-////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[] )
-{
-    // parse arguments
-    algorithm = atoi(argv[1]);
-    lambda = atof(argv[2]);
-    serviceAvg = atof(argv[3]);
-    init();
-    //cout << algorithm << " " << lambda << endl;
-    
-    //cout << head->PID << " " << head->type << " " << head->arrivalTime << endl;
-    run_sim();
-    generate_report();
     return 0;
 }
 
@@ -163,21 +159,26 @@ void init()
     //create first node
 	event *eve = new event;
     eve->PID = PID;
-    eve->type = 1;
-    eve->arrivalTime = genexp(1 / lambda);
-    eve->burstTime = genexp(1 / serviceAvg);
+    eve->type = EVENT1;
+    eve->arrivalTime = 0;
+    eve->burstTime = genexp(1/serviceAvg);
     eve->next = NULL;
     head = eve;
     tail = eve;
 
     PID++;
+
+    
 }
 
 void process_event1(event *one){
     //create a new process
+    cpuClock += one->arrivalTime;
+
 	process proc;
     proc.burst = one->burstTime;
     proc.ID = one->PID;
+    proc.arrivalTime = cpuClock;
     proc.state = STATE1;
     
 
@@ -185,35 +186,39 @@ void process_event1(event *one){
 
     //schedule new arrivals (currently has a default number)
     //arrival is clock + random
-    for(int i = 0; i < 1; i++){
-        event *eve = new event;
-        eve->type = EVENT1;
-        eve->arrivalTime = genexp(1 / lambda);
-        eve->burstTime = genexp(1 / serviceAvg);
-        eve->PID = PID;
-        eve->next = NULL;
-        tail->next = eve;
-        tail = eve;
+    event *eve = new event;
+    eve->type = EVENT1;
+    eve->arrivalTime = genexp(lambda);
+    eve->burstTime = genexp(1/serviceAvg);
+    eve->PID = PID;
+    eve->next = NULL;
+    tail->next = eve;
+    tail = eve;
 
-        PID++;
-    }
+    PID++;
 
     //schedule type 2 event and place at front of event queue
-    event *eve = new event;
-    eve->PID = one->PID;
-    eve->type = EVENT2;
-    eve->burstTime = one->burstTime;
-    eve->burstTime = one->arrivalTime;
-    eve->next = one->next;
-    one->next = eve;
+    event *new_eve = new event;
+    new_eve->PID = one->PID;
+    new_eve->type = EVENT2;
+    new_eve->burstTime = one->burstTime;
+    new_eve->arrivalTime = one->arrivalTime;
+    new_eve->next = one->next;
+    one->next = new_eve;
+    
 }
 
 void process_event2(event *two) {
 	// move a process to ready 
 	// Update/edit the event queue
-    //cout << "I am in process_event2" << endl;  //debug statement
 	ProcessList[two->PID].state = STATE2;
-    waitTimes.push_back(cpuClock - two->arrivalTime);
+    if(PID > 0) {
+        cpuClock += ProcessList[two->PID - 1].burst;
+    }
+    ProcessList[two->PID].serviceTime = cpuClock;
+    //ProcessList[two->PID].waitTime = cpuClock - ProcessList[two->PID].arrivalTime;
+    cout << "Process arrival time: " << ProcessList[two->PID].arrivalTime << endl;
+    cout << "Process service time: " << ProcessList[two->PID].serviceTime << endl;
 
     //schedule type 4 event for FCFS
     switch(algorithm){
@@ -222,6 +227,7 @@ void process_event2(event *two) {
             eve->PID = two->PID;
             eve->type = EVENT4;
             eve->burstTime = two->burstTime;
+            eve->arrivalTime = 0;
             eve->next = two->next;
             two->next = eve;
             break;
@@ -256,39 +262,38 @@ void process_event4(event *four) {
     cpuClock += four->burstTime;
 
 	ProcessList[four->PID].state = STATE4;
-    turnAroundTimes.push_back(cpuClock);
+    ProcessList[four->PID].turnAroundTime = cpuClock - ProcessList[four->PID].arrivalTime;
 
     //increment terminatedProcess
 	terminatedProcess++;
-	//check if to terminate
 
     //check if number of terminated processes is enough (currently default value)
-	if (terminatedProcess == 10000) {
+	if (terminatedProcess == 10) {
 		end_condition = true;
 	}
 }
 
 void generate_report()
 {
-    int  long avgWaitTime = 0;
-    int long avgTurnAround = 0;
-    int long totalTurnAroundtime = 0;
+    float avgWaitTime = 0;
+    float avgTurnAround = 0;
+    float totalTurnAroundtime = 0;
     //calculate average wait time
-    for(int i = 0; i < waitTimes.size(); i++) {
-        avgWaitTime += waitTimes[i];
+    for(int i = 0; i < ProcessList.size(); i++) {
+        avgWaitTime += ProcessList[i].waitTime;
+        //cout << "avg wait time: " << avgWaitTime << endl;
     }
 
-    avgWaitTime /= waitTimes.size();
+    avgWaitTime = avgWaitTime / 10;
     float avgQueueLen = lambda * avgWaitTime;
     cout << "Average Queue Length: " << avgQueueLen << endl;
-
-    //cout << avgWaitTime << endl;
-    //calculate average turn around time
-    for(int i = 0; i < turnAroundTimes.size(); i++) {
-        avgTurnAround += turnAroundTimes[i];
+    //cout << "Average wait time: " << fixed << setprecision(3) << avgWaitTime << endl;
+    // calculate average turn around time
+    for(int i = 0; i < ProcessList.size(); i++) {
+        avgTurnAround += ProcessList[i].turnAroundTime;
     }
 
-    avgTurnAround /= turnAroundTimes.size();
-    cout << "Average Turn Around Time: " << avgTurnAround / 10000 << " seconds." << endl;
+    avgTurnAround /= ProcessList.size();
+    //cout << "Average Turn Around Time: " << avgTurnAround << " seconds." << endl;
 
 }
